@@ -16,11 +16,12 @@ function New-RandomString {
 
 function Invoke-WpCli {
     param([string]$Container, [string]$Command)
-    $output = docker exec $Container bash -c "wp $Command --allow-root" 2>&1
+    $escaped = $Command -replace '"', '\"'
+    $output = docker exec $Container bash -c "wp $escaped --allow-root" 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "  [WARN] wp $Command -> $output" -ForegroundColor Yellow
+        Write-Host "  [WARN] wp $Command -> $LASTEXITCODE" -ForegroundColor Yellow
     }
-    return $output
+    return $output.Trim()
 }
 
 $RootDir = Join-Path $PSScriptRoot $ProjectName
@@ -302,9 +303,9 @@ foreach ($title in $pages.Keys) {
     Invoke-WpCli "${ProjectName}_wp" "post create --post_type=page --post_title=`"$title`" --post_name=$($pages[$title]) --post_status=publish --post_author=1"
 }
 
-# Set homepage and blog page
-$homeId = docker exec "${ProjectName}_wp" wp post list --post_type=page --post_name=home --format=ids --allow-root
-$blogId = docker exec "${ProjectName}_wp" wp post list --post_type=page --post_name=blog --format=ids --allow-root
+# Set homepage and blog page (get first ID from list output)
+$homeId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=home --format=ids").Split("`n")[0].Trim()
+$blogId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=blog --format=ids").Split("`n")[0].Trim()
 Invoke-WpCli "${ProjectName}_wp" "option update show_on_front page"
 Invoke-WpCli "${ProjectName}_wp" "option update page_on_front $homeId"
 Invoke-WpCli "${ProjectName}_wp" "option update page_for_posts $blogId"
@@ -315,7 +316,7 @@ Invoke-WpCli "${ProjectName}_wp" "menu location assign `"Menu Principale`" prima
 Invoke-WpCli "${ProjectName}_wp" "menu location assign `"Menu Principale`" mobile_menu"
 
 foreach ($slug in $pages.Values) {
-    $pageId = docker exec "${ProjectName}_wp" wp post list --post_type=page --post_name=$slug --format=ids --allow-root
+    $pageId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=$slug --format=ids").Split("`n")[0].Trim()
     Invoke-WpCli "${ProjectName}_wp" "menu item add-post `"Menu Principale`" $pageId"
 }
 

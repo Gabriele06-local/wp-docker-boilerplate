@@ -1,0 +1,84 @@
+﻿services:
+  wordpress:
+    image: wordpress:6.7-php8.3-apache
+    container_name: testprova_wp
+    ports:
+      - "127.0.0.1:8082:80"
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: 'IJbl3mRpIqni7QJHxkKkSHs5'
+      WORDPRESS_DB_NAME: testprova_db
+      WORDPRESS_TABLE_PREFIX: wp_9hnfxr_
+      WORDPRESS_DEBUG: 0
+      WORDPRESS_LOGGED_IN_KEY: 'vip,nk(*aPW,X,9(v2pT*qjzm|<-L-?_Oe-XynAP]|.Wzbrs%qNsQS;O!KN>]=M.'
+      WORDPRESS_NONCE_SALT: 'wBL#6H=>ynfPo /6cO a~+o7RlMP*t]pN9MEd#4cYaY=PBnwuA}$g?8`J/?E9I<H'
+      WORDPRESS_AUTH_KEY: ']*N]mJ7oem*E(Yb^ItqFa)ngRkYOzjbs$kFbD-?!A@y)QU|{DW S~Ei><RFny]_5'
+      WORDPRESS_NONCE_KEY: '5w}77/ y5.zxr{*X{PH9T%$KT[BR?M`^-5E$w=;hUEyi~7m;8C[e.^/^_.Hb8/9i'
+      WORDPRESS_SECURE_AUTH_KEY: 'iUq+L4|sPxa+9cCY{!T`=|Us)!,NOq[7/=10o7L^Nl/kNB@rXBWnWX+s$#vgUb!y'
+      WORDPRESS_LOGGED_IN_SALT: 'd,rBSF`^~7k*ICY>0a-7;Pm4GVR]9w/~ycg.OL]r%o2N6e.Dmsp6DMvou|1po+U8'
+      WORDPRESS_AUTH_SALT: 'Y.fk|rP;ar)Oo<6xRy^{N^U>vo8keG-`z<47,3ZSAbE)7nQQf~4F+]bwTMhs7#NQ'
+      WORDPRESS_SECURE_AUTH_SALT: 'al1GSnB6<)z-v2WQtWT[XUa=hx$fC$9RF(a6A;(twbyD=+uS3.0G2?W-!u+0#zl|'
+      WORDPRESS_CONFIG_EXTRA: |
+        define('DISALLOW_FILE_EDIT', true);
+        define('WP_AUTO_UPDATE_CORE', 'minor');
+        define('WP_POST_REVISIONS', 5);
+        define('AUTOSAVE_INTERVAL', 120);
+        define('EMPTY_TRASH_DAYS', 14);
+    volumes:
+      - ./wp-content/themes:/var/www/html/wp-content/themes
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins
+      - ./wp-content/uploads:/var/www/html/wp-content/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/wp-login.php"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  db:
+    image: mysql:8.0.40
+    container_name: testprova_db
+    ports:
+      - "127.0.0.1:3309:3306"
+    environment:
+      MYSQL_DATABASE: testprova_db
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: 'IJbl3mRpIqni7QJHxkKkSHs5'
+      MYSQL_ROOT_PASSWORD: 'AiSNXsMsDUrjdAGk3f6oA2X4'
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: testprova_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: testprova_pma
+    ports:
+      - "127.0.0.1:8083:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: wpuser
+      PMA_PASSWORD: 'IJbl3mRpIqni7QJHxkKkSHs5'
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  db_data:

@@ -6,7 +6,7 @@ param(
     [switch]$SkipPlugins
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 function New-RandomString {
     param([int]$Length = 20)

@@ -2,6 +2,14 @@
 
 Crea un progetto WordPress locale in 30 secondi con Docker — sicuro, riproducibile, production-ready.
 
+## Screenshot
+
+![WordPress front-end](screenshots/Screenshot%202026-07-04%20123502.png)
+*Front-end del sito con tema Astra e menu a 5 voci*
+
+![Credenziali generate](screenshots/Screenshot%202026-07-04%20123517.png)
+*Credenziali casuali salvate automaticamente*
+
 ## Prerequisiti
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac/Linux)

@@ -262,16 +262,17 @@ PAGES[Servizi]="servizi"
 PAGES[Blog]="blog"
 PAGES[Contatti]="contatti"
 
+declare -A PAGE_IDS
 for title in "${!PAGES[@]}"; do
-    wp post create --post_type=page --post_title="$title" --post_name="${PAGES[$title]}" --post_status=publish --post_author=1
+    slug="${PAGES[$title]}"
+    output=$(wp post create --post_type=page --post_title="$title" --post_name="$slug" --post_status=publish --post_author=1)
+    PAGE_IDS[$slug]=$(echo "$output" | grep -oP 'Created post \K\d+')
 done
 
 # ---- Homepage & blog page ----
-HOME_ID=$(wp post list --post_type=page --post_name=home --format=ids)
-BLOG_ID=$(wp post list --post_type=page --post_name=blog --format=ids)
 wp option update show_on_front page
-wp option update page_on_front "$HOME_ID"
-wp option update page_for_posts "$BLOG_ID"
+wp option update page_on_front "${PAGE_IDS[home]}"
+wp option update page_for_posts "${PAGE_IDS[blog]}"
 
 # ---- Menu ----
 wp menu create "Menu Principale"
@@ -279,13 +280,13 @@ wp menu location assign "Menu Principale" primary
 wp menu location assign "Menu Principale" mobile_menu
 
 for slug in "${PAGES[@]}"; do
-    PAGE_ID=$(wp post list --post_type=page --post_name="$slug" --format=ids)
-    wp menu item add-post "Menu Principale" "$PAGE_ID"
+    wp menu item add-post "Menu Principale" "${PAGE_IDS[$slug]}"
 done
 
 # ---- Plugins ----
 echo "Installazione plugin..."
 wp plugin install redis-cache --activate
+wp config set WP_REDIS_HOST redis --type=constant
 wp redis enable
 wp plugin install limit-login-attempts-reloaded --activate
 wp plugin delete hello akismet

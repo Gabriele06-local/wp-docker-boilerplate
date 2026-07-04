@@ -291,7 +291,8 @@ add_action('template_redirect', function () {
 Invoke-WpCli "${ProjectName}_wp" "theme install astra --activate"
 Invoke-WpCli "${ProjectName}_wp" "theme activate astra-child"
 
-# Create pages
+# Create pages (track IDs by slug)
+$pageIds = @{}
 $pages = @{
     "Home" = "home"
     "Chi Siamo" = "chi-siamo"
@@ -300,15 +301,17 @@ $pages = @{
     "Contatti" = "contatti"
 }
 foreach ($title in $pages.Keys) {
-    Invoke-WpCli "${ProjectName}_wp" "post create --post_type=page --post_title=`"$title`" --post_name=$($pages[$title]) --post_status=publish --post_author=1"
+    $slug = $pages[$title]
+    $output = Invoke-WpCli "${ProjectName}_wp" "post create --post_type=page --post_title=`"$title`" --post_name=$slug --post_status=publish --post_author=1"
+    if ($output -match 'Created post (\d+)') {
+        $pageIds[$slug] = $matches[1]
+    }
 }
 
-# Set homepage and blog page (get first ID from list output)
-$homeId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=home --format=ids").Split("`n")[0].Trim()
-$blogId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=blog --format=ids").Split("`n")[0].Trim()
+# Set homepage and blog page
 Invoke-WpCli "${ProjectName}_wp" "option update show_on_front page"
-Invoke-WpCli "${ProjectName}_wp" "option update page_on_front $homeId"
-Invoke-WpCli "${ProjectName}_wp" "option update page_for_posts $blogId"
+Invoke-WpCli "${ProjectName}_wp" "option update page_on_front $($pageIds['home'])"
+Invoke-WpCli "${ProjectName}_wp" "option update page_for_posts $($pageIds['blog'])"
 
 # Create and assign menu
 Invoke-WpCli "${ProjectName}_wp" "menu create `"Menu Principale`""
@@ -316,14 +319,14 @@ Invoke-WpCli "${ProjectName}_wp" "menu location assign `"Menu Principale`" prima
 Invoke-WpCli "${ProjectName}_wp" "menu location assign `"Menu Principale`" mobile_menu"
 
 foreach ($slug in $pages.Values) {
-    $pageId = (Invoke-WpCli "${ProjectName}_wp" "post list --post_type=page --post_name=$slug --format=ids").Split("`n")[0].Trim()
-    Invoke-WpCli "${ProjectName}_wp" "menu item add-post `"Menu Principale`" $pageId"
+    Invoke-WpCli "${ProjectName}_wp" "menu item add-post `"Menu Principale`" $($pageIds[$slug])"
 }
 
 # ---- Security & performance plugins ----
 if (-not $SkipPlugins) {
     Write-Host "Installazione plugin di sicurezza e performance..." -ForegroundColor Cyan
     Invoke-WpCli "${ProjectName}_wp" "plugin install redis-cache --activate"
+    Invoke-WpCli "${ProjectName}_wp" "config set WP_REDIS_HOST redis --type=constant"
     Invoke-WpCli "${ProjectName}_wp" "redis enable"
     Invoke-WpCli "${ProjectName}_wp" "plugin install limit-login-attempts-reloaded --activate"
     Invoke-WpCli "${ProjectName}_wp" "plugin delete hello akismet"

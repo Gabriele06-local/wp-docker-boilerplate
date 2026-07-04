@@ -5,12 +5,19 @@ Crea un progetto WordPress locale in 30 secondi con Docker — sicuro, riproduci
 ## Prerequisiti
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac/Linux)
-- PowerShell 5.1+ (Windows) o bash (Mac/Linux)
+- PowerShell 5.1+ (Windows) oppure bash (Mac/Linux)
 
 ## Utilizzo
 
+**Windows (PowerShell):**
 ```powershell
 .\new-wp-project.ps1 -ProjectName MioSito
+```
+
+**Mac / Linux (bash):**
+```bash
+chmod +x new-wp-project.sh
+./new-wp-project.sh MioSito
 ```
 
 Dopo qualche minuto hai:
@@ -35,25 +42,31 @@ Dopo qualche minuto hai:
 
 ## Parametri
 
+**PowerShell:**
 | Parametro | Default | Descrizione |
 |---|---|---|
-| `-ProjectName` | obbligatorio | Nome del progetto / cartella |
-| `-Port` | `8080` | Porta per WordPress |
-| `-DbPort` | `3307` | Porta per MySQL |
+| `-ProjectName` | obbligatorio | Nome del progetto |
+| `-Port` | `8080` | Porta WordPress |
+| `-DbPort` | `3307` | Porta MySQL |
 | `-SkipPlugins` | `$false` | Salta installazione plugin |
+
+**bash:**
+```bash
+./new-wp-project.sh MioSito [Port] [DbPort]
+# Esempio con porte custom:
+./new-wp-project.sh MioSito 8080 3307
+```
 
 ## Struttura progetto
 
 ```
-NomeProgetto/
-├── docker-compose.yml      # Container definition
-├── .htaccess               # Sicurezza e performance
-├── .gitignore              # Esclude uploads, db_data, credenziali
-├── credentials.txt         # Password generate (gitignorato)
+MioSito/
+├── docker-compose.yml
+├── .htaccess
+├── .gitignore
+├── credentials.txt      # Password generate (gitignorato)
 └── wp-content/
-    ├── themes/astra-child/ # Tema child preconfigurato
-    ├── plugins/
-    └── uploads/
+    └── themes/astra-child/
 ```
 
 ## Comandi utili
